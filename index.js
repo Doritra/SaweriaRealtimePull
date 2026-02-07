@@ -1,17 +1,20 @@
-const express = require("express");
-const { Client, GatewayIntentBits } = require("discord.js");
-
-const app = express();
-const PORT = process.env.PORT || 8080;
-
+// ================= DEBUG LOG =================
 console.log("Starting Saweria relay...");
 console.log("PORT =", process.env.PORT);
 console.log("DISCORD_TOKEN exists?", !!process.env.DISCORD_TOKEN);
 
-// === SIMPAN DONASI TERAKHIR ===
+// ================= REQUIRE =================
+const express = require("express");
+const { Client, GatewayIntentBits } = require("discord.js");
+
+// ================= EXPRESS SERVER =================
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+// ================= SIMPAN DONASI TERAKHIR =================
 let donateQueue = [];
 
-// === DISCORD BOT ===
+// ================= DISCORD BOT =================
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -24,12 +27,13 @@ client.once("ready", () => {
   console.log(`🤖 Bot logged in as ${client.user.tag}`);
 });
 
-// GANTI DENGAN CHANNEL ID DONATION
-const DONATION_CHANNEL_ID = "14691469433302049095856";
+// ================= CHANNEL DONASI =================
+// GANTI DENGAN CHANNEL ID DONASI
+const DONATION_CHANNEL_ID = "123456789012345678"; // <-- update dengan channel ID baru
 
 client.on("messageCreate", (message) => {
   if (message.channel.id !== DONATION_CHANNEL_ID) return;
-  if (!message.author.bot) return;
+  if (!message.author.bot) return; // HARUS !message.author.bot
 
   const text = message.content;
 
@@ -38,10 +42,10 @@ client.on("messageCreate", (message) => {
     time: Date.now()
   });
 
-  console.log("💰 Donate captured from Discord");
+  console.log("💰 Donate captured from Discord:", text);
 });
 
-// === ENDPOINT BUAT ROBLOX ===
+// ================= ENDPOINT UNTUK ROBLOX =================
 app.get("/latest", (req, res) => {
   if (donateQueue.length > 0) {
     res.json(donateQueue.shift());
@@ -54,5 +58,8 @@ app.listen(PORT, () => {
   console.log("🚀 Server running on port", PORT);
 });
 
-// LOGIN BOT
-client.login(process.env.DISCORD_TOKEN);
+// ================= LOGIN BOT =================
+client.login(process.env.DISCORD_TOKEN)
+  .catch(err => {
+    console.error("❌ Bot failed to login:", err);
+  });
