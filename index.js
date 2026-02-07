@@ -6,27 +6,39 @@ app.use(bodyParser.json());
 
 const PORT = process.env.PORT || 3000;
 
-// Temporary memory untuk donate terbaru
-let latestDonate = null;
+/*
+  Queue donate (FIFO)
+  Anti skip kalau donate masuk cepat
+*/
+let donateQueue = [];
 
-// Endpoint Saweria (POST)
+// Saweria webhook
 app.post("/saweria", (req, res) => {
-  const data = req.body; // { username, amount, message }
-  latestDonate = data;
-  console.log("Donate received:", data);
+  const data = req.body;
+
+  if (data && data.username && data.amount) {
+    donateQueue.push({
+      username: data.username,
+      amount: data.amount,
+      message: data.message || "",
+      timestamp: Date.now()
+    });
+
+    console.log("[Saweria] Donate queued:", data.username, data.amount);
+  }
+
   res.status(200).send("OK");
 });
 
-// Endpoint Roblox (GET)
+// Roblox polling
 app.get("/latest", (req, res) => {
-  if (latestDonate) {
-    res.json(latestDonate);
-    latestDonate = null; // reset supaya gak dikirim berkali-kali
+  if (donateQueue.length > 0) {
+    res.json(donateQueue.shift());
   } else {
-    res.status(204).send(); // no content
+    res.status(204).send();
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Saweria relay running on port ${PORT}`);
 });
